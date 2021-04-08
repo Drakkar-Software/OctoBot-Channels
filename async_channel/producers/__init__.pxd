@@ -1,4 +1,4 @@
-# cython: language_level=3, boundscheck=False, wraparound=False
+# cython: language_level=3
 #  Drakkar-Software Async-Channel
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -15,13 +15,18 @@
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
 
-cdef class Producer:
-    cdef public object channel # object type = Channel
-    cdef public object logger  # object type = logger
-    cdef public object produce_task  # object type = asyncio.Task
+from async_channel.producers cimport producer
+from async_channel.producers.producer cimport (
+    Producer
+)
 
-    cdef public bint should_stop
-    cdef public bint is_running
+from async_channel.producers cimport ipc_producer
+from async_channel.producers.ipc_producer cimport (
+    IPCProducer
+)
 
-    cpdef void create_task(self)
-    cpdef bint is_consumers_queue_empty(self, int priority_level)
+
+__all__ = [
+    "Producer",
+    "IPCProducer",
+]

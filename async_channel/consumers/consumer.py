@@ -1,3 +1,4 @@
+# pylint: disable=too-many-instance-attributes
 #  Drakkar-Software Async-Channel
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -18,8 +19,8 @@ Define async_channel Consumer class
 """
 import asyncio
 
-import async_channel.util.logging_util as logging
 import async_channel.enums
+import async_channel.util.logging_util as logging
 
 
 class Consumer:
@@ -32,11 +33,15 @@ class Consumer:
 
     def __init__(
         self,
+        channel,
         callback: object,
         size: int = async_channel.constants.DEFAULT_QUEUE_SIZE,
         priority_level: int = async_channel.enums.ChannelConsumerPriorityLevels.HIGH.value,
     ):
         self.logger = logging.get_logger(self.__class__.__name__)
+
+        # Related async_channel instance
+        self.channel = channel
 
         # Consumer data queue. It contains producer's work (received through Producer.send()).
         self.queue = asyncio.Queue(maxsize=size)
@@ -65,7 +70,7 @@ class Consumer:
         """
         while not self.should_stop:
             try:
-                await self.perform(await self.queue.get())
+                await self.perform(await self.receive())
             except asyncio.CancelledError:
                 self.logger.debug("Cancelled task")
             except Exception as consume_exception:  # pylint: disable=broad-except
@@ -76,6 +81,13 @@ class Consumer:
                 )
             finally:
                 await self.consume_ends()
+
+    async def receive(self):
+        """
+        Wait and receive data from the queue
+        :return: the received data
+        """
+        return await self.queue.get()
 
     async def perform(self, kwargs) -> None:
         """
@@ -121,38 +133,3 @@ class Consumer:
 
     def __str__(self):
         return f"{self.__class__.__name__} with callback: {self.callback.__name__}"
-
-
-class InternalConsumer(Consumer):
-    """
-    An InternalConsumer is a classic Consumer except that his callback is declared internally
-    """
-
-    def __init__(self):
-        """
-        The constructor only override the callback to be the 'internal_callback' method
-        """
-        super().__init__(None)
-        self.callback = self.internal_callback
-
-    async def internal_callback(self, **kwargs: dict) -> None:
-        """
-        The method triggered when the producer has pushed into the channel
-        :param kwargs: Additional params
-        """
-        raise NotImplementedError("internal_callback is not implemented")
-
-
-class SupervisedConsumer(Consumer):
-    """
-    A SupervisedConsumer is a classic Consumer that notifies the queue when its work is done
-    """
-
-    async def consume_ends(self) -> None:
-        """
-        The method called when the work is done
-        """
-        try:
-            self.queue.task_done()
-        except ValueError:  # when task_done() is called when the Exception was CancelledError
-            pass

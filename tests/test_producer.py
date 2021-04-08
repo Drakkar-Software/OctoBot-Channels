@@ -16,9 +16,9 @@
 
 import pytest
 
-import async_channel.consumer as channel_consumer
+import async_channel.consumers as channel_consumer
 import async_channel.channels as channels
-import async_channel.producer as channel_producer
+import async_channel.producers as channel_producer
 import async_channel.util as util
 import tests 
 
@@ -60,7 +60,7 @@ async def test_send_producer_without_consumer():
     class TestConsumer(channel_consumer.Consumer):
         async def consume(self):
             while not self.should_stop:
-                await self.callback(**(await self.queue.get()))
+                await self.callback(**(await self.receive()))
 
     class TestChannel(channels.Channel):
         PRODUCER_CLASS = TestProducer
@@ -94,6 +94,38 @@ async def test_send_producer_with_consumer():
     producer = tests.EmptyTestProducer(channels.get_chan(tests.TEST_CHANNEL))
     await producer.run()
     await producer.send({"data": "test"})
+
+
+@pytest.mark.asyncio
+async def test_send_producer_with_multiple_consumers():
+    class TestConsumer(channel_consumer.Consumer):
+        pass
+
+    class TestChannel(channels.Channel):
+        PRODUCER_CLASS = tests.EmptyTestProducer
+        CONSUMER_CLASS = TestConsumer
+
+    async def callback(data):
+        assert data == "test"
+        await channels.get_chan(tests.TEST_CHANNEL).stop()
+
+    channels.del_chan(tests.TEST_CHANNEL)
+    await util.create_channel_instance(TestChannel, channels.set_chan)
+    consumer_1 = await channels.get_chan(tests.TEST_CHANNEL).new_consumer(callback)
+    consumer_2 = await channels.get_chan(tests.TEST_CHANNEL).new_consumer(callback)
+
+    assert consumer_1.queue.empty()
+    assert consumer_2.queue.empty()
+
+    producer = tests.EmptyTestProducer(channels.get_chan(tests.TEST_CHANNEL))
+    await producer.run()
+    await producer.send({"data": "test"}, consumers=[consumer_1])
+
+    assert not consumer_1.queue.empty()
+    assert consumer_2.queue.empty()
+
+    await producer.send({"data": "test"}, consumers=[consumer_2])
+    assert not consumer_2.queue.empty()
 
 
 @pytest.mark.asyncio

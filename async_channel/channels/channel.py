@@ -1,3 +1,4 @@
+# pylint: disable=too-many-instance-attributes
 #  Drakkar-Software Async-Channel
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -20,6 +21,7 @@ import typing
 
 import async_channel.util.logging_util as logging
 import async_channel.enums
+import async_channel.constants
 import async_channel.channels.channel_instances as channel_instances
 
 
@@ -46,7 +48,10 @@ class Channel:
         async_channel.enums.ChannelConsumerPriorityLevels.HIGH.value
     )
 
-    def __init__(self):
+    # Channel IPC port
+    IPC_PORT = async_channel.constants.DEFAULT_IPC_PORT
+
+    def __init__(self, ipc_url=async_channel.constants.DEFAULT_IPC_URL):
         self.logger = logging.get_logger(self.__class__.__name__)
 
         # Channel unique id
@@ -66,6 +71,9 @@ class Channel:
 
         # Used to synchronize producers and consumer
         self.is_synchronized = False
+
+        # Required when using IPC, the local socket url
+        self.ipc_url = f"{ipc_url}{self.IPC_PORT}"
 
     @classmethod
     def get_name(cls) -> str:
@@ -97,7 +105,9 @@ class Channel:
         consumer = (
             internal_consumer
             if internal_consumer
-            else self.CONSUMER_CLASS(callback, size=size, priority_level=priority_level)
+            else self.CONSUMER_CLASS(
+                self, callback, size=size, priority_level=priority_level
+            )
         )
         await self._add_new_consumer_and_run(consumer, consumer_filters)
         await self._check_producers_state()

@@ -13,26 +13,3 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-"""
-Define async_channel project
-"""
-
-from async_channel import constants
-from async_channel.constants import (
-    CHANNEL_WILDCARD,
-    DEFAULT_QUEUE_SIZE,
-)
-
-from async_channel import enums
-from async_channel.enums import ChannelConsumerPriorityLevels
-
-PROJECT_NAME = "async-channel"
-VERSION = "2.0.9"  # major.minor.revision
-
-__all__ = [
-    "CHANNEL_WILDCARD",
-    "DEFAULT_QUEUE_SIZE",
-    "ChannelConsumerPriorityLevels",
-    "PROJECT_NAME",
-    "VERSION",
-]

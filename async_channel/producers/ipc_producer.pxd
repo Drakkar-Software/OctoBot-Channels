@@ -1,3 +1,4 @@
+# cython: language_level=3, boundscheck=False, wraparound=False
 #  Drakkar-Software Async-Channel
 #  Copyright (c) Drakkar-Software, All rights reserved.
 #
@@ -13,26 +14,11 @@
 #
 #  You should have received a copy of the GNU Lesser General Public
 #  License along with this library.
-"""
-Define async_channel project
-"""
+cimport zmq
 
-from async_channel import constants
-from async_channel.constants import (
-    CHANNEL_WILDCARD,
-    DEFAULT_QUEUE_SIZE,
-)
+cimport async_channel.producers.producer as producer
 
-from async_channel import enums
-from async_channel.enums import ChannelConsumerPriorityLevels
+cdef class IPCProducer(producer.Producer):
+    cdef zmq.Socket ipc_socket
 
-PROJECT_NAME = "async-channel"
-VERSION = "2.0.9"  # major.minor.revision
-
-__all__ = [
-    "CHANNEL_WILDCARD",
-    "DEFAULT_QUEUE_SIZE",
-    "ChannelConsumerPriorityLevels",
-    "PROJECT_NAME",
-    "VERSION",
-]
+    cdef void _ipc_connect(self)

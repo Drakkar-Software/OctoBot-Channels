@@ -54,6 +54,7 @@ jobs:
     - name: Compile project
       if: matrix.type == 'cython'
       run: |
+        sudo apt install libczmq-dev
         python setup.py build_ext --inplace
         python setup.py install
 
@@ -124,7 +125,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install --prefer-binary auditwheel -r dev_requirements.txt -r requirements.txt
         CIBW_BEFORE_ALL_LINUX: >
-          yum install -y libffi libffi-devel openssl-devel wget unzip blas-devel lapack-devel libxml2-devel libxslt-devel
+          yum install -y libffi libffi-devel openssl-devel wget unzip blas-devel lapack-devel libxml2-devel libxslt-devel libczmq-devel
 
     - name: Publish package
       if: matrix.os == 'ubuntu-latest'
